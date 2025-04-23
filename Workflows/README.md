@@ -1,12 +1,13 @@
 # Slack Workflow: Weekly Presenter Reminder
 
-This Google Apps Script code automates sending a weekly reminder to a designated Slack channel, informing everyone who the next presenter is. It reads the list of presenters and the current presenter index from a Google Sheet.
+This Google Apps Script code is designed to **trigger a Slack Workflow via a webhook** on a weekly schedule. The workflow, configured in Slack, can then handle the actual posting of the reminder message to your channel. The script reads the list of presenters and the current presenter index from a Google Sheet.
 
 ## Features
 
-* **Weekly Reminders:** Automatically sends a message to a Slack channel at a scheduled time each week.
+* **Triggers Slack Workflow:** Google Apps Script initiates a predefined Slack Workflow.
+* **Weekly Scheduling:** Google Apps Script is scheduled to run weekly.
 * **Rotation of Presenters:** Cycles through a list of presenters stored in a Google Sheet.
-* **Easy Configuration:** Requires minimal setup by updating a few variables in the script.
+* **Easy Configuration:** Requires minimal setup by updating a few variables in the script and configuring the Slack workflow.
 * **Error Handling:** Includes basic logging for debugging and error reporting.
 * **Skips Placeholder Names:** Designed to skip rows in the presenter list that contain the word "Name".
 
@@ -21,35 +22,38 @@ Follow these steps to set up the Slack workflow:
     * Make a note of the **sheet name**, the **header of the presenter column**, and the **cell containing the current index**.
     * Determine the **total number of presenters** in your list.
 
-2.  **Create a Slack App and Get a Webhook URL:**
-    * Go to [Slack API](https://api.slack.com/apps) and create a new app.
-    * Give your app a name and choose the workspace where you want to use it.
-    * Navigate to "Incoming Webhooks" in the left-hand menu and activate it.
-    * Click "Add New Webhook to Workspace".
-    * Choose the channel where you want the weekly reminders to be sent and click "Authorize".
-    * Copy the **Webhook URL** provided. You'll need this in the next step.
-
-3.  **Open the Script Editor in your Google Sheet:**
+2.  **Open the Script Editor in your Google Sheet:**
     * In your Google Sheet, go to "Extensions" > "Apps Script".
 
-4.  **Copy and Paste the Code:**
+3.  **Copy and Paste the Code:**
     * Delete any existing code in the script editor.
     * Copy the provided Google Apps Script code and paste it into the script editor.
 
-5.  **Configure the Script:**
+4.  **Configure the Script:**
     * Locate the `// --- Configuration ---` section at the beginning of the `triggerWeeklyReminder` function.
     * Replace the placeholder values with your actual information:
         * `const sheetName = "";` **Replace with the name of your Google Sheet.** (e.g., `"Presentations"`)
         * `const presenterColumnHeader = "";` **Replace with the header of the column containing the presenter names.** (e.g., `"Presenter Name"`)
         * `const currentIndexCell = "";` **Replace with the cell address that contains the current presenter index.** (e.g., `"A1"`)
-        * `const slackWebhookUrl = "";` **Replace with the Slack Webhook URL you copied earlier.**
+        * `const slackWebhookUrl = "";` **Replace with the Webhook URL of the *Trigger* step in your Slack Workflow (see step 6).**
         * `const numberOfPresenters = ;` **Replace with the total number of presenters in your list.** (e.g., `5`)
 
-6.  **Save the Script:**
-    * Click the floppy disk icon (Save project) and give your script a name (e.g., "Slack Presenter Reminder").
+5.  **Save the Script:**
+    * Click the floppy disk icon (Save project) and give your script a name (e.g., "Slack Presenter Trigger").
 
-7.  **Set up a Time-Driven Trigger:**
-    * Click the clock icon on the left sidebar (Triggers).
+6.  **Create a Slack Workflow with a Webhook Trigger:**
+    * In your Slack workspace, navigate to "Automations" in the left sidebar.
+    * Click "Create workflow".
+    * Choose "Webhook" as the trigger.
+    * Give your workflow a name (e.g., "Weekly Presenter Announcement").
+    * Click "Add step". This is where you'll define what happens when the webhook is called. Typically, you'll want to "Send a message" to your desired channel.
+    * **Copy the Webhook URL provided by Slack at the "Webhook" trigger step.** You will need to paste this into the `slackWebhookUrl` variable in your Google Apps Script (step 4).
+    * In the "Send a message" step, you can use variables from the webhook payload to include the presenter's name. For example, if your script sends `{"presenter": "John Doe", "currentIndex": 2}`, you can access these in your message as `{{data.presenter}}` and `{{data.currentIndex}}`.
+    * Add any other steps you want in your workflow (e.g., formatting the message, adding reactions, etc.).
+    * Click "Save" and then "Publish" your workflow.
+
+7.  **Set up a Time-Driven Trigger for the Google Apps Script:**
+    * In the Apps Script editor, click the clock icon on the left sidebar (Triggers).
     * Click the "Add Trigger" button in the bottom right corner.
     * In the dropdown menus, configure the trigger as follows:
         * **Choose which function to run:** `triggerWeeklyReminder`
@@ -62,20 +66,23 @@ Follow these steps to set up the Slack workflow:
 
 ## How it Works
 
-1.  **Reads Configuration:** The script starts by reading the configuration variables you set, such as the sheet name, column header, current index cell, Slack webhook URL, and the total number of presenters.
-2.  **Retrieves Data:** It fetches the list of presenter names from the specified column in your Google Sheet and the current presenter index from the designated cell.
-3.  **Calculates Next Presenter:** It calculates the index of the next presenter in the rotation. If the current index reaches the total number of presenters, it wraps back to the beginning of the list. It also includes logic to skip any rows where the presenter name is "Name".
-4.  **Constructs Slack Message:** It creates a JSON payload containing the name of the next presenter.
-5.  **Sends Slack Notification:** It uses the `UrlFetchApp.fetch` method to send a POST request to your Slack webhook URL with the JSON payload. This triggers a message to be sent to the configured Slack channel.
-6.  **Updates Current Index:** After successfully sending the notification, the script updates the current index cell in your Google Sheet to the index of the presenter who was just announced. This ensures that the next time the script runs, it will pick the subsequent presenter in the list.
+1.  **Scheduled Script Execution:** The Google Apps Script runs at the scheduled time defined by the time-driven trigger.
+2.  **Reads Configuration:** The script reads the configuration variables, including the URL of the Slack Workflow's webhook trigger.
+3.  **Retrieves Data:** It fetches the list of presenter names and the current index from the Google Sheet.
+4.  **Calculates Next Presenter:** It determines the next presenter in the rotation, skipping any "Name" placeholders.
+5.  **Constructs Webhook Payload:** It creates a JSON payload containing the `presenter` name and the `currentIndex`.
+6.  **Triggers Slack Workflow:** The script uses `UrlFetchApp.fetch` to send a POST request to the Slack Workflow's webhook URL, including the JSON payload. This initiates the Slack Workflow.
+7.  **Slack Workflow Executes:** The Slack Workflow receives the webhook call and proceeds with the steps you've defined (e.g., sending a formatted message to a channel using the data from the payload).
+8.  **Updates Current Index:** The Google Apps Script updates the current index in the Google Sheet to prepare for the next week.
 
 ## Notes
 
-* Ensure that the sheet name, column header, and cell address for the current index are entered correctly in the script configuration.
-* The script assumes that the presenter names start from the first row after the header in the specified column.
-* The "Name" check is a simple way to skip placeholder rows. You can modify this logic if you have a different way of indicating non-presenter rows.
-* You can adjust the time-driven trigger settings to change the day and time the reminder is sent each week.
-* Check the script logs (View > Logs) in the Apps Script editor for any errors or successful executions.
+* Ensure you use the **Webhook URL from the *Trigger* step of your Slack Workflow** in the script's configuration.
+* The data sent in the webhook payload from the script (e.g., `presenter`, `currentIndex`) can be accessed as variables within the steps of your Slack Workflow.
+* You have more flexibility in formatting the Slack message and adding other actions within the Slack Workflow itself.
+* Check the script logs in the Apps Script editor and the workflow execution logs in Slack for any errors or successful runs.
+
+This approach provides a clear separation of concerns: Google Apps Script handles the data retrieval and scheduling, while Slack Workflow manages the messaging and any other Slack-specific actions. Thanks for clarifying your intended setup! Let me know if you have any more questions.
 
 ## Contributing
 
