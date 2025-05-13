@@ -1,55 +1,63 @@
 # Slack Workflow: Weekly Presenter Reminder
-
 This Google Apps Script code is designed to **trigger a Slack Workflow via a webhook** on a weekly schedule. The workflow, configured in Slack, can then handle the actual posting of the reminder message to your channel. The script reads the list of presenters and the current presenter index from a Google Sheet.
 
 ## Features
+* **Triggers Slack Workflow:** Initiates a predefined Slack Workflow using a webhook.
+* **Weekly Scheduling:** Leverages Google Apps Script's time-driven triggers for automated weekly execution.
+* **Rotation of Presenters:** Cycles through a list of presenters fetched from a Google Sheet, ensuring fair distribution.
+* **Slack User Tagging:** Supports tagging presenters in Slack using their Slack user IDs, enhancing notification reliability.
+* **Easy Configuration:** Requires minimal setup with clearly defined configuration variables.
+* **Error Handling and Logging:** Includes logging for debugging and error reporting within the Google Apps Script environment.
+* **Header Row Skipping:** Intelligently skips header rows in the presenter list, preventing errors.
 
-* **Triggers Slack Workflow:** Google Apps Script initiates a predefined Slack Workflow.
-* **Weekly Scheduling:** Google Apps Script is scheduled to run weekly.
-* **Rotation of Presenters:** Cycles through a list of presenters stored in a Google Sheet.
-* **Easy Configuration:** Requires minimal setup by updating a few variables in the script and configuring the Slack workflow.
-* **Error Handling:** Includes basic logging for debugging and error reporting.
-* **Skips Placeholder Names:** Designed to skip rows in the presenter list that contain the word "Name".
 
 ## Setup Instructions
-
 Follow these steps to set up the Slack workflow:
 
 1.  **Create a Google Sheet:**
     * Create a new Google Sheet or use an existing one.
-    * In one of the columns, list the names of the presenters. Ensure the first row of this column contains a clear header (e.g., "Presenter Name").
-    * In another cell, enter the number `1`. This cell will store the index of the current presenter.
-    * Make a note of the **sheet name**, the **header of the presenter column**, and the **cell containing the current index**.
-    * Determine the **total number of presenters** in your list.
+    * In one column (e.g., "Presenter Name"), list the names of the presenters. Ensure the first row of this column contains a clear header.
+    * In another column (e.g., "Slack ID"), list the Slack user IDs of the presenters.  This is crucial for tagging users in Slack.  You can typically find a user's ID by right-clicking on their profile picture and copying their member ID.  Ensure the first row also has a clear header.
+    * In a separate cell (e.g., "A1"), enter the number `1`. This cell will store the index of the current presenter.
+    * Make a note of the following:
+        * **Sheet Name:** (e.g., `"Presentations"`)
+        * **Presenter Name Column Header:** (e.g., `"Presenter Name"`)
+        * **Slack ID Column Header:** (e.g., `"Slack ID"`)
+        * **Current Index Cell:** (e.g., `"A1"`)
+        * **Total Number of Presenters**
 
 2.  **Open the Script Editor in your Google Sheet:**
     * In your Google Sheet, go to "Extensions" > "Apps Script".
 
 3.  **Copy and Paste the Code:**
     * Delete any existing code in the script editor.
-    * Copy the provided Google Apps Script code and paste it into the script editor.
+    * Copy the provided Google Apps Script code (`triggerWeeklyReminder.js`) and paste it into the script editor.
 
 4.  **Configure the Script:**
     * Locate the `// --- Configuration ---` section at the beginning of the `triggerWeeklyReminder` function.
     * Replace the placeholder values with your actual information:
-        * `const sheetName = "";` **Replace with the name of your Google Sheet.** (e.g., `"Presentations"`)
-        * `const presenterColumnHeader = "";` **Replace with the header of the column containing the presenter names.** (e.g., `"Presenter Name"`)
-        * `const currentIndexCell = "";` **Replace with the cell address that contains the current presenter index.** (e.g., `"A1"`)
-        * `const slackWebhookUrl = "";` **Replace with the Webhook URL of the *Trigger* step in your Slack Workflow (see step 6).**
-        * `const numberOfPresenters = ;` **Replace with the total number of presenters in your list.** (e.g., `5`)
+        * `const sheetName = "";`  **Replace with the name of your Google Sheet.**
+        * `const presenterColumnHeader = "";`  **Replace with the header of the column containing the presenter names.**
+        * `const tagColumnHeader = "";`  **Replace with the header of the column containing the Slack IDs.**
+        * `const currentIndexCell = "";`  **Replace with the cell address that contains the current presenter index.**
+        * `const slackWebhookUrl = "";`  **Replace with the Webhook URL of the *Trigger* step in your Slack Workflow (see step 6).**
+        * `const numberOfPresenters = ;`  **Replace with the total number of presenters in your list.**
 
 5.  **Save the Script:**
     * Click the floppy disk icon (Save project) and give your script a name (e.g., "Slack Presenter Trigger").
-
+ 
 6.  **Create a Slack Workflow with a Webhook Trigger:**
-    * In your Slack workspace, navigate to "Automations" in the left sidebar.
+    * In your Slack workspace, navigate to "Automations" in the left sidebar and select "Workflows".
     * Click "Create workflow".
     * Choose "Webhook" as the trigger.
-    * Give your workflow a name (e.g., "Weekly Presenter Announcement").
-    * Click "Add step". This is where you'll define what happens when the webhook is called. Typically, you'll want to "Send a message" to your desired channel.
-    * **Copy the Webhook URL provided by Slack at the "Webhook" trigger step.** You will need to paste this into the `slackWebhookUrl` variable in your Google Apps Script (step 4).
-    * In the "Send a message" step, you can use variables from the webhook payload to include the presenter's name. For example, if your script sends `{"presenter": "John Doe", "currentIndex": 2}`, you can access these in your message as `{{data.presenter}}` and `{{data.currentIndex}}`.
-    * Add any other steps you want in your workflow (e.g., formatting the message, adding reactions, etc.).
+    * Give your workflow a descriptive name (e.g., "Weekly Presenter Announcement").
+    * Click "Add step".  The most common step is "Send a message" to a channel.
+    * **copy the Webhook URL provided by Slack at the "Webhook" trigger step.** You MUST paste this into the `slackWebhookUrl` variable in your Google Apps Script (step 4).
+    * In the "Send a message" step, you can now use variables from the webhook payload.  For example, if your script sends `{"presenter": "John Doe", "tag": "U1234567", "currentIndex": 2}`, you can access these in your message:
+        * `{{data.presenter}}` will output "John Doe".
+        * To tag the user, use  `<@{{data.tag}}>` which will render as `@John Doe` in Slack, provided "U1234567" is their correct user ID.
+        * `{{data.currentIndex}}` will output "2".
+    * Add any other steps to your workflow as needed (e.g., formatting the message, adding reactions, etc.).
     * Click "Save" and then "Publish" your workflow.
 
 7.  **Set up a Time-Driven Trigger for the Google Apps Script:**
@@ -65,7 +73,6 @@ Follow these steps to set up the Slack workflow:
     * Click "Save". You may be asked to authorize the script to access your Google Sheet and connect to an external service (Slack). Follow the on-screen instructions to grant the necessary permissions.
 
 ## How it Works
-
 1.  **Scheduled Script Execution:** The Google Apps Script runs at the scheduled time defined by the time-driven trigger.
 2.  **Reads Configuration:** The script reads the configuration variables, including the URL of the Slack Workflow's webhook trigger.
 3.  **Retrieves Data:** It fetches the list of presenter names and the current index from the Google Sheet.
@@ -76,14 +83,12 @@ Follow these steps to set up the Slack workflow:
 8.  **Updates Current Index:** The Google Apps Script updates the current index in the Google Sheet to prepare for the next week.
 
 ## Notes
-
-* Ensure you use the **Webhook URL from the *Trigger* step of your Slack Workflow** in the script's configuration.
-* The data sent in the webhook payload from the script (e.g., `presenter`, `currentIndex`) can be accessed as variables within the steps of your Slack Workflow.
-* You have more flexibility in formatting the Slack message and adding other actions within the Slack Workflow itself.
-* Check the script logs in the Apps Script editor and the workflow execution logs in Slack for any errors or successful runs.
-
-This approach provides a clear separation of concerns: Google Apps Script handles the data retrieval and scheduling, while Slack Workflow manages the messaging and any other Slack-specific actions. Thanks for clarifying your intended setup! Let me know if you have any more questions.
+* **Webhook URL:** Always use the **Webhook URL from the *Trigger* step** of your Slack Workflow.
+* **Slack User IDs:** Accurate Slack user IDs are essential for tagging.  Double-check these in your Google Sheet.
+* **Variable Usage in Slack:** Leverage the variables in the webhook payload (`{{data.presenter}}`, `<@{{data.tag}}>`, `{{data.currentIndex}}`) to create dynamic and informative Slack messages.
+* **Error Handling:** Monitor the Apps Script execution logs and Slack Workflow logs for any errors.
+* **Flexibility:** The Slack Workflow provides extensive flexibility in customizing the message format, adding buttons, or performing other actions.
+* **Time Zone:** Be mindful of the time zone when setting up the time-driven trigger in Apps Script.
 
 ## Contributing
-
 Feel free to fork this repository and submit pull requests with improvements or bug fixes.
