@@ -1,4 +1,4 @@
-function triggerWeeklyReminderBasedOnDate() { // Renamed function for clarity
+function triggerWeeklyReminderBasedOnDate() {
   // --- Configuration ---
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheetName = ""; 
